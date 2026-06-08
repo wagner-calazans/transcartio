@@ -316,10 +316,16 @@ with tab_simulador:
         coord_blq = st.session_state.ponto_bloqueio if st.session_state.alerta_acionado else None
         
         # Recuperar a camera acompanhando o comboio manual
+        try:
+            rota_segura = nx.shortest_path(st.session_state.G_atual, origem_selecionada, destino_selecionado, weight='peso_tatico')
+            r_interp = interpolar_rota(st.session_state.G_atual, rota_segura, 1000)
+        except nx.NetworkXNoPath:
+            r_interp = []
+
         c_lon, c_lat = (-43.195, -22.898)
-        if rota_interpolada:
-            idx = int((st.session_state.progresso_missao / 100.0) * (len(rota_interpolada) - 1))
-            c_lon, c_lat = rota_interpolada[idx]
+        if r_interp:
+            idx = int((st.session_state.progresso_missao / 100.0) * (len(r_interp) - 1))
+            c_lon, c_lat = r_interp[idx]
 
         deck, ts, d, t = build_deck(st.session_state.G_atual, st.session_state.progresso_missao, coord_blq, z=14, p=50, cam_lat=c_lat, cam_lon=c_lon)
         render_metrics(metrics_box, ts, d, t, 1 if st.session_state.alerta_acionado else 0)
