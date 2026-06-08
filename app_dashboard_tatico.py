@@ -34,11 +34,12 @@ def inicializar_grafo():
     Inicialização: Carrega um grafo viário de exemplo utilizando a biblioteca osmnx.
     Utilizando um recorte urbano pequeno para garantir performance.
     """
-    # Ponto focal: Urca / Praia Vermelha, RJ (Região do IME)
-    point = (-22.9550, -43.1666)
+    # Ponto focal: Saída do Centro do Rio em direção à Baixada (Central do Brasil / Av. Brasil)
+    point = (-22.898, -43.195)
     
-    # Carrega a malha viária para veículos num raio de 800m
-    G = ox.graph_from_point(point, dist=800, network_type='drive')
+    # Carrega a malha viária num raio de 3500m (pegando Centro, São Cristóvão, Caju - acesso à Baixada)
+    # Nota: Distâncias muito maiores (ex: 30km até Caxias) excedem o limite de 1GB de RAM do Streamlit gratuito
+    G = ox.graph_from_point(point, dist=3500, network_type='drive')
     
     # Inicializa a variável 'peso_tatico' baseada no comprimento ('length')
     for u, v, key, data in G.edges(keys=True, data=True):
@@ -89,6 +90,15 @@ destino_selecionado = st.sidebar.selectbox(
     index=nos_grafo.index(st.session_state.destino_padrao)
 )
 
+cenario_alerta = st.sidebar.selectbox(
+    "Cenário de Ameaça (LoRaWAN)",
+    [
+        "Cenário 1: Barricada na Av. Presidente Vargas",
+        "Cenário 2: Veículo Interceptado no Caju (Acesso Av. Brasil)",
+        "Cenário 3: Alagamento em São Cristóvão"
+    ]
+)
+
 filtro_severidade = st.sidebar.selectbox(
     "Filtro de Severidade do Alerta", 
     ["Alta", "Média", "Baixa"]
@@ -98,18 +108,13 @@ def simular_recebimento_alerta():
     """
     Simulação do Alerta: Função fictícia que simula a chegada de um JSON via rádio LoRaWAN.
     """
-    try:
-        # Calcula rota atual para simular um bloqueio no trajeto
-        rota = nx.shortest_path(st.session_state.G_atual, origem_selecionada, destino_selecionado, weight='peso_tatico')
-        if len(rota) > 3:
-            # Pega um nó no meio da rota para gerar o alerta de bloqueio
-            no_alvo = rota[len(rota) // 2]
-            dados_no = st.session_state.G_atual.nodes[no_alvo]
-            coord_simulada = (dados_no['y'], dados_no['x'])
-        else:
-            coord_simulada = (-22.9550, -43.1666)
-    except nx.NetworkXNoPath:
-         coord_simulada = (-22.9550, -43.1666)
+    # Define a coordenada baseada no cenário escolhido
+    if "Cenário 1" in cenario_alerta:
+        coord_simulada = (-22.902, -43.190) # Pres. Vargas
+    elif "Cenário 2" in cenario_alerta:
+        coord_simulada = (-22.880, -43.218) # Caju / Av Brasil
+    else:
+        coord_simulada = (-22.892, -43.220) # São Cristóvão
 
     # JSON fictício simulando recepção via rádio
     json_recebido = {
@@ -197,7 +202,7 @@ if len(rota_segura) > 0:
     origem_no = G.nodes[origem_selecionada]
     centro_mapa = [origem_no['y'], origem_no['x']]
 else:
-    centro_mapa = [-22.9550, -43.1666]
+    centro_mapa = [-22.898, -43.195]
 
 m = folium.Map(location=centro_mapa, zoom_start=15, tiles="CartoDB dark_matter")
 
