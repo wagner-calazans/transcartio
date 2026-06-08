@@ -3,11 +3,9 @@
 Projeto CARTIO
 Autoria: Wagner Calazans
 Ano de criação: 2026
-Versao: 3.1 (Correção de Layout e Retorno da Barra Lateral)
+Versao: 4.0 (Aesthetics: Deep Dark Mode + Teal/Grená Accents)
 IME - Instituto Militar de Engenharia
 Arquivo: app_dashboard_tatico.py
-Descrição: Sistema Tático de Suporte à Decisão Logística para
-roteamento dinâmico sob redes degradadas e física LoRaWAN.
 ============================================================
 """
 
@@ -25,25 +23,27 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- Estilização CSS Segura (Paleta Azul Petróleo e Grená) ---
-# Removi os seletores genéricos (como 'div') que estavam quebrando o mapa
+# --- Estilização CSS: Fundo Escuro, Botões com a Paleta ---
 estilo_css = """
 <style>
+    /* Fundo Majoritariamente Preto/Escuro */
     .stApp {
-        background-color: #0E2931;
+        background-color: #0A0A0A;
     }
     
-    h1, h2, h3, p, span {
-        color: #E2E2E0;
+    /* Sidebar mais escura */
+    section[data-testid="stSidebar"] {
+        background-color: #111317 !important;
+        border-right: 1px solid #1A2626 !important;
+    }
+    
+    /* Textos principais em Off-White */
+    h1, h2, h3, p, span, label {
+        color: #E2E2E0 !important;
         font-family: 'Helvetica Neue', sans-serif;
     }
     
-    /* Customização da Barra Lateral */
-    section[data-testid="stSidebar"] {
-        background-color: #12484C !important;
-    }
-    
-    /* Botões */
+    /* Botões: Grená */
     .stButton > button {
         background-color: #861211 !important;
         color: #E2E2E0 !important;
@@ -58,43 +58,26 @@ estilo_css = """
         background-color: #A01514 !important;
     }
     
-    /* Header Customizado com Logo do IME */
-    .header-container {
-        display: flex;
-        align-items: center;
-        background-color: #12484C;
-        padding: 1rem 2rem;
-        border-radius: 8px;
-        margin-bottom: 2rem;
-        border-bottom: 3px solid #861211;
-    }
-    .header-logo {
-        width: 60px;
-        height: 60px;
-        margin-right: 1.5rem;
-    }
-    .header-title {
-        display: flex;
-        flex-direction: column;
-    }
-    .header-title h1 {
-        margin: 0;
-        font-size: 1.8rem;
-        font-weight: 600;
-        letter-spacing: 1px;
-        color: #E2E2E0 !important;
-    }
-    .header-title span {
-        font-size: 0.9rem;
-        opacity: 0.8;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        color: #E2E2E0 !important;
+    /* Slider: Azul Petróleo */
+    .stSlider > div > div > div > div {
+        background-color: #2B7574 !important;
     }
     
-    /* Status Badges */
+    /* Métricas */
+    div[data-testid="stMetricValue"] {
+        color: #2B7574 !important; /* Azul Petróleo para números */
+        font-weight: bold;
+    }
+    div[data-testid="stMetricLabel"] {
+        color: #E2E2E0 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.8rem;
+    }
+
+    /* Badges de Status (Sem margens extras, sem emojis) */
     .status-online {
-        background-color: #2B7574;
+        background-color: #12484C; /* Azul Petróleo Médio */
         color: #E2E2E0;
         padding: 4px 8px;
         border-radius: 4px;
@@ -102,7 +85,7 @@ estilo_css = """
         font-weight: bold;
     }
     .status-offline {
-        background-color: #861211;
+        background-color: #861211; /* Grená */
         color: #E2E2E0;
         padding: 4px 8px;
         border-radius: 4px;
@@ -113,29 +96,27 @@ estilo_css = """
 """
 st.markdown(estilo_css, unsafe_allow_html=True)
 
-# Logo Monocromático do IME
-svg_ime_logo = """
-<svg class="header-logo" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
-  <path d="M10,10 L90,10 L90,60 C90,90 50,110 50,110 C50,110 10,90 10,60 Z" fill="none" stroke="#E2E2E0" stroke-width="4"/>
-  <rect x="10" y="25" width="80" height="15" fill="#861211" />
-  <text x="50" y="36" font-family="Arial" font-weight="bold" font-size="12" fill="#E2E2E0" text-anchor="middle">I M E</text>
-  <circle cx="50" cy="65" r="18" fill="none" stroke="#2B7574" stroke-width="3" stroke-dasharray="4 2"/>
-  <polygon points="50,52 54,60 62,60 56,65 58,73 50,68 42,73 44,65 38,60 46,60" fill="#E2E2E0"/>
-  <circle cx="50" cy="95" r="12" fill="none" stroke="#E2E2E0" stroke-width="2"/>
-  <path d="M50,83 L50,107 M38,95 L62,95 M44,85 C40,95 40,95 44,105 M56,85 C60,95 60,95 56,105" stroke="#E2E2E0" stroke-width="1.5" fill="none"/>
-</svg>
-"""
+# --- Cabeçalho Customizado (Sem espaços no início da linha para evitar renderizar como código) ---
+svg_ime_logo = """<svg style="width:60px; height:60px; margin-right:1.5rem;" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+<path d="M10,10 L90,10 L90,60 C90,90 50,110 50,110 C50,110 10,90 10,60 Z" fill="none" stroke="#E2E2E0" stroke-width="4"/>
+<rect x="10" y="25" width="80" height="15" fill="#861211" />
+<text x="50" y="36" font-family="Arial" font-weight="bold" font-size="12" fill="#E2E2E0" text-anchor="middle">I M E</text>
+<circle cx="50" cy="65" r="18" fill="none" stroke="#2B7574" stroke-width="3" stroke-dasharray="4 2"/>
+<polygon points="50,52 54,60 62,60 56,65 58,73 50,68 42,73 44,65 38,60 46,60" fill="#E2E2E0"/>
+<circle cx="50" cy="95" r="12" fill="none" stroke="#E2E2E0" stroke-width="2"/>
+<path d="M50,83 L50,107 M38,95 L62,95 M44,85 C40,95 40,95 44,105 M56,85 C60,95 60,95 56,105" stroke="#E2E2E0" stroke-width="1.5" fill="none"/>
+</svg>"""
 
-# Renderiza o Topo
-st.markdown(f"""
-<div class="header-container">
-    {svg_ime_logo}
-    <div class="header-title">
-        <h1>SISTEMA TÁTICO DE SUPORTE À DECISÃO</h1>
-        <span>Centro de Controle Operacional - CARTIO</span>
-    </div>
+html_header = f"""
+<div style="display: flex; align-items: center; background-color: #111317; padding: 1rem 2rem; border-radius: 8px; margin-bottom: 2rem; border-bottom: 3px solid #2B7574; border-top: 1px solid #1A2626;">
+{svg_ime_logo}
+<div style="display: flex; flex-direction: column;">
+<h1 style="margin: 0; font-size: 1.8rem; font-weight: 600; letter-spacing: 1px; color: #E2E2E0 !important;">SISTEMA TÁTICO DE SUPORTE À DECISÃO</h1>
+<span style="font-size: 0.9rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 2px; color: #2B7574 !important;">Centro de Controle Operacional - CARTIO</span>
 </div>
-""", unsafe_allow_html=True)
+</div>
+"""
+st.markdown(html_header, unsafe_allow_html=True)
 
 
 # --- Funções Auxiliares de Geometria e Física ---
@@ -207,7 +188,7 @@ GATEWAYS_LORAWAN = [
     {"name": "Gateway Caju", "coords": [-43.220, -22.880], "radius": 1200}
 ]
 
-# --- Barra Lateral (Retornando as opções conforme exigência do Professor) ---
+# --- Barra Lateral (Comando Logístico) ---
 st.sidebar.title("Comando Logístico")
 
 origem_selecionada = st.sidebar.selectbox("Coordenada de Origem", nos_grafo, index=nos_grafo.index(st.session_state.origem_padrao))
@@ -275,7 +256,7 @@ m1, m2, m3, m4 = st.columns(4)
 
 with m1:
     status_html = "<span class='status-online'>SISTEMA ONLINE</span>" if tem_sinal_agora else "<span class='status-offline'>SINAL DEGRADADO</span>"
-    st.markdown(f"**STATUS LORAWAN:**<br>{status_html}", unsafe_allow_html=True)
+    st.markdown(f"**STATUS LORAWAN:**<br><br>{status_html}", unsafe_allow_html=True)
 with m2:
     st.metric("DISTÂNCIA DA ROTA (KM)", f"{distancia_rota_m / 1000:.2f}")
 with m3:
@@ -326,7 +307,7 @@ if posicoes_comboio:
         get_position="coords",
         get_radius=30,
         get_fill_color=[226, 226, 224, 255], # #E2E2E0 Off-white
-        get_line_color=[14, 41, 49, 255], # #0E2931 borda escura
+        get_line_color=[14, 41, 49, 255], # Borda escura
         radius_min_pixels=6,
         radius_max_pixels=15,
         lineWidthMinPixels=2
@@ -352,10 +333,11 @@ if st.session_state.ponto_bloqueio is not None:
 cam_lon, cam_lat = posicoes_comboio[0] if posicoes_comboio else (-43.195, -22.898)
 view_state = pdk.ViewState(latitude=cam_lat, longitude=cam_lon, zoom=14, pitch=50, bearing=0)
 
+# Correção fundamental: Usando o estilo nativo DARK do PyDeck para evitar erro do Mapbox API
 r = pdk.Deck(
     layers=layers,
     initial_view_state=view_state,
-    map_style="mapbox://styles/mapbox/dark-v11",
+    map_style=pdk.map_styles.DARK,
     tooltip={"text": "Localização Tática"}
 )
 
