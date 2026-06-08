@@ -257,17 +257,23 @@ with tab_simulador:
         col3.metric("TEMPO ESTIMADO (MIN)", f"{tmp:.1f}")
         col4.metric("OBSTÁCULOS DETECTADOS", f"{obs}")
 
+    def update_legend(container, text, color_type):
+        colors = {"info": "#2B7574", "warning": "#B8860B", "error": "#861211", "success": "#1E5F5E"}
+        bg = colors.get(color_type, "#2B7574")
+        html = f'''<div style="background-color: {bg}; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 1.1rem; font-weight: bold; border-left: 5px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">{text}</div>'''
+        container.markdown(html, unsafe_allow_html=True)
+
     if st.session_state.demo_mode:
         # ---- FILME INTERATIVO (DEMO) ----
         # CENA 1
-        narrative_box.info("🎬 **CENA 1:** Rio de Janeiro, Sexta-feira, 5 de junho de 2026, 18h23min. Chuva forte de verão, alagamentos em algumas regiões da cidade.")
+        update_legend(narrative_box, "🎬 CENA 1: Rio de Janeiro, Sexta-feira, 5 de junho de 2026, 18h23min. Chuva forte de verão, alagamentos em algumas regiões da cidade.", "info")
         deck, ts, d, t = build_deck(st.session_state.G_atual, 0.0, None, z=11, p=0, cam_lat=-22.898, cam_lon=-43.195)
         render_metrics(metrics_box, ts, d, t, 0)
         map_box.pydeck_chart(deck)
         time.sleep(5)
 
         # CENA 2
-        narrative_box.warning("🎬 **CENA 2:** Rio de Janeiro, Sexta-feira, 18h32min. O sistema elétrico cai. Sinal de celular e internet 4G/5G ficam **sem operação**.")
+        update_legend(narrative_box, "🎬 CENA 2: Rio de Janeiro, Sexta-feira, 18h32min. O sistema elétrico cai. Sinal de celular e internet 4G/5G ficam sem operação.", "warning")
         deck, ts, d, t = build_deck(st.session_state.G_atual, 0.0, None, z=12, p=0, cam_lat=-22.898, cam_lon=-43.195, escurecer=True)
         render_metrics(metrics_box, False, d, t, 0) # Força offline na narrativa
         map_box.pydeck_chart(deck)
@@ -275,7 +281,7 @@ with tab_simulador:
 
         # CENA 3
         local_txt = cenario_alerta.split(':')[1].strip()
-        narrative_box.error(f"🎬 **CENA 3:** {local_txt}, Sexta-feira, 19h02min. Viatura tática se aproxima e identifica bloqueio via **YOLOv5** na borda! Transmitindo pacote de emergência via **LoRaWAN** para o CCO.")
+        update_legend(narrative_box, f"🎬 CENA 3: {local_txt}, Sexta-feira, 19h02min. Viatura tática se aproxima e identifica bloqueio via YOLOv5 na borda! Transmitindo pacote de emergência via LoRaWAN para o CCO.", "error")
         sucesso, coord_bloqueio = acionar_bloqueio_logico(cenario_alerta)
         
         # Piscar o radar Lorawan
@@ -288,13 +294,17 @@ with tab_simulador:
         time.sleep(2)
 
         # CENA 4
-        narrative_box.success("🎬 **CENA 4:** Alerta validado pelo Gateway CARTIO! Rota recalculada com sucesso via NetworkX. Desviando comboio pelo caminho mais rápido e seguro.")
+        update_legend(narrative_box, "🎬 CENA 4: Alerta validado pelo Gateway CARTIO! Rota recalculada com sucesso via NetworkX. Desviando comboio pelo caminho mais rápido e seguro.", "success")
         for prg in range(0, 101, 2): # Move de 2 em 2%
             # Câmera acompanha o comboio
             deck, ts, d, t = build_deck(st.session_state.G_atual, prg, coord_bloqueio, z=15, p=50, cam_lat=-22.898, cam_lon=-43.195) 
             
             # Recupera as posições temporárias só para guiar a câmera
-            r_interp = interpolar_rota(st.session_state.G_atual, nx.shortest_path(st.session_state.G_atual, origem_selecionada, destino_selecionado, weight='peso_tatico'), 1000)
+            try:
+                rota_c4 = nx.shortest_path(st.session_state.G_atual, origem_selecionada, destino_selecionado, weight='peso_tatico')
+                r_interp = interpolar_rota(st.session_state.G_atual, rota_c4, 1000)
+            except nx.NetworkXNoPath:
+                r_interp = []
             if r_interp:
                 idx = int((prg / 100.0) * (len(r_interp) - 1))
                 c_lon, c_lat = r_interp[idx]
@@ -305,7 +315,7 @@ with tab_simulador:
             map_box.pydeck_chart(deck)
             time.sleep(0.15)
             
-        narrative_box.info("🎬 **FIM DA SIMULAÇÃO.** O comboio de suprimentos atingiu o destino com sucesso!")
+        update_legend(narrative_box, "🎬 FIM DA SIMULAÇÃO. O comboio de suprimentos atingiu o destino final ou interrompeu a rota.", "info")
         time.sleep(3)
         st.session_state.demo_mode = False
         st.rerun()
