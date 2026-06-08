@@ -3,7 +3,7 @@
 Projeto CARTIO
 Autoria: Wagner Calazans
 Ano de criação: 2026
-Versao: 3.0 (Design Profissional - Paleta Azul Petróleo e Grená)
+Versao: 3.1 (Correção de Layout e Retorno da Barra Lateral)
 IME - Instituto Militar de Engenharia
 Arquivo: app_dashboard_tatico.py
 Descrição: Sistema Tático de Suporte à Decisão Logística para
@@ -22,53 +22,25 @@ import numpy as np
 st.set_page_config(
     page_title="Simulador Tático - CARTIO", 
     layout="wide", 
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-# --- Estilização CSS Personalizada (Paleta Azul Petróleo e Grená) ---
+# --- Estilização CSS Segura (Paleta Azul Petróleo e Grená) ---
+# Removi os seletores genéricos (como 'div') que estavam quebrando o mapa
 estilo_css = """
 <style>
-    /* Cores da Paleta:
-       Azul Petróleo Escuro: #0E2931
-       Azul Petróleo Médio: #12484C
-       Azul Petróleo Claro: #2B7574
-       Grená: #861211
-       Off-white: #E2E2E0
-    */
-    
-    /* Fundo Principal e Texto */
     .stApp {
         background-color: #0E2931;
-        color: #E2E2E0;
     }
     
-    /* Top Bar / Headers */
-    h1, h2, h3, h4, p, span, div {
-        color: #E2E2E0 !important;
+    h1, h2, h3, p, span {
+        color: #E2E2E0;
         font-family: 'Helvetica Neue', sans-serif;
     }
     
-    /* Expander (Painel de Controle) */
-    .streamlit-expanderHeader {
+    /* Customização da Barra Lateral */
+    section[data-testid="stSidebar"] {
         background-color: #12484C !important;
-        border-radius: 4px;
-        color: #E2E2E0 !important;
-    }
-    .streamlit-expanderContent {
-        background-color: #0E2931 !important;
-        border: 1px solid #12484C !important;
-    }
-    
-    /* Selectboxes e Inputs */
-    div[data-baseweb="select"] > div {
-        background-color: #12484C;
-        border-color: #2B7574;
-        color: #E2E2E0;
-    }
-    
-    /* Slider */
-    .stSlider > div > div > div > div {
-        background-color: #2B7574 !important;
     }
     
     /* Botões */
@@ -84,18 +56,6 @@ estilo_css = """
     }
     .stButton > button:hover {
         background-color: #A01514 !important;
-    }
-    
-    /* Métricas */
-    div[data-testid="stMetricValue"] {
-        color: #2B7574 !important;
-        font-weight: bold;
-    }
-    div[data-testid="stMetricLabel"] {
-        color: #E2E2E0 !important;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-size: 0.8rem;
     }
     
     /* Header Customizado com Logo do IME */
@@ -122,12 +82,14 @@ estilo_css = """
         font-size: 1.8rem;
         font-weight: 600;
         letter-spacing: 1px;
+        color: #E2E2E0 !important;
     }
     .header-title span {
         font-size: 0.9rem;
         opacity: 0.8;
         text-transform: uppercase;
         letter-spacing: 2px;
+        color: #E2E2E0 !important;
     }
     
     /* Status Badges */
@@ -151,7 +113,7 @@ estilo_css = """
 """
 st.markdown(estilo_css, unsafe_allow_html=True)
 
-# Logo Monocromático do IME (SVG Estilizado para combinar com a paleta)
+# Logo Monocromático do IME
 svg_ime_logo = """
 <svg class="header-logo" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
   <path d="M10,10 L90,10 L90,60 C90,90 50,110 50,110 C50,110 10,90 10,60 Z" fill="none" stroke="#E2E2E0" stroke-width="4"/>
@@ -245,51 +207,45 @@ GATEWAYS_LORAWAN = [
     {"name": "Gateway Caju", "coords": [-43.220, -22.880], "radius": 1200}
 ]
 
-# --- Top Bar (Painel de Controle Expansível) ---
-with st.expander("PAINEL DE CONTROLE LOGÍSTICO E SIMULAÇÃO", expanded=True):
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        origem_selecionada = st.selectbox("Coordenada de Origem", nos_grafo, index=nos_grafo.index(st.session_state.origem_padrao))
-    with col2:
-        destino_selecionado = st.selectbox("Coordenada de Destino", nos_grafo, index=nos_grafo.index(st.session_state.destino_padrao))
-    with col3:
-        cenario_alerta = st.selectbox("Injeção de Ameaça (LoRaWAN)", [
-            "Cenário A: Barricada na Av. Presidente Vargas",
-            "Cenário B: Interceptação (Acesso Av. Brasil)",
-            "Cenário C: Alagamento em São Cristóvão"
-        ])
+# --- Barra Lateral (Retornando as opções conforme exigência do Professor) ---
+st.sidebar.title("Comando Logístico")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    col_slider, col_btn = st.columns([3, 1])
-    with col_slider:
-        progresso_missao = st.slider("PROGRESSO DA MISSÃO (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.5)
-    
-    def simular_recebimento_alerta():
-        if "Cenário A" in cenario_alerta: coord_simulada = (-22.902, -43.190)
-        elif "Cenário B" in cenario_alerta: coord_simulada = (-22.880, -43.218)
-        else: coord_simulada = (-22.892, -43.220)
+origem_selecionada = st.sidebar.selectbox("Coordenada de Origem", nos_grafo, index=nos_grafo.index(st.session_state.origem_padrao))
+destino_selecionado = st.sidebar.selectbox("Coordenada de Destino", nos_grafo, index=nos_grafo.index(st.session_state.destino_padrao))
 
-        lat, lon = coord_simulada
-        tem_sinal = any(haversine(lon, lat, gw["coords"][0], gw["coords"][1]) <= gw["radius"] for gw in GATEWAYS_LORAWAN)
-                
-        if tem_sinal:
-            no_mais_proximo = ox.distance.nearest_nodes(st.session_state.G_atual, X=lon, Y=lat)
-            for u, v, key, data in st.session_state.G_atual.edges(no_mais_proximo, keys=True, data=True):
-                st.session_state.G_atual[u][v][key]['peso_tatico'] += 999999
-            for u, v, key, data in st.session_state.G_atual.in_edges(no_mais_proximo, keys=True, data=True):
-                st.session_state.G_atual[u][v][key]['peso_tatico'] += 999999
+st.sidebar.markdown("---")
+progresso_missao = st.sidebar.slider("PROGRESSO DA MISSÃO (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.5)
+st.sidebar.markdown("---")
 
-            st.session_state.alerta_acionado = True
-            st.session_state.ponto_bloqueio = (lat, lon)
-            st.success("ALERTA RECEBIDO NO CCO: Rota reconfigurada com sucesso.")
-        else:
-            st.session_state.ponto_bloqueio = (lat, lon)
-            st.error("FALHA DE COMUNICAÇÃO: O evento ocorreu fora do alcance dos Gateways LoRaWAN.")
+cenario_alerta = st.sidebar.selectbox("Injeção de Ameaça (LoRaWAN)", [
+    "Cenário A: Barricada na Av. Presidente Vargas",
+    "Cenário B: Interceptação (Acesso Av. Brasil)",
+    "Cenário C: Alagamento em São Cristóvão"
+])
 
-    with col_btn:
-        st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-        st.button("TRANSMITIR ALERTA TÁTICO", on_click=simular_recebimento_alerta, use_container_width=True)
+def simular_recebimento_alerta():
+    if "Cenário A" in cenario_alerta: coord_simulada = (-22.902, -43.190)
+    elif "Cenário B" in cenario_alerta: coord_simulada = (-22.880, -43.218)
+    else: coord_simulada = (-22.892, -43.220)
+
+    lat, lon = coord_simulada
+    tem_sinal = any(haversine(lon, lat, gw["coords"][0], gw["coords"][1]) <= gw["radius"] for gw in GATEWAYS_LORAWAN)
+            
+    if tem_sinal:
+        no_mais_proximo = ox.distance.nearest_nodes(st.session_state.G_atual, X=lon, Y=lat)
+        for u, v, key, data in st.session_state.G_atual.edges(no_mais_proximo, keys=True, data=True):
+            st.session_state.G_atual[u][v][key]['peso_tatico'] += 999999
+        for u, v, key, data in st.session_state.G_atual.in_edges(no_mais_proximo, keys=True, data=True):
+            st.session_state.G_atual[u][v][key]['peso_tatico'] += 999999
+
+        st.session_state.alerta_acionado = True
+        st.session_state.ponto_bloqueio = (lat, lon)
+        st.sidebar.success("ALERTA RECEBIDO NO CCO: Rota reconfigurada com sucesso.")
+    else:
+        st.session_state.ponto_bloqueio = (lat, lon)
+        st.sidebar.error("FALHA DE COMUNICAÇÃO: Fora do alcance dos Gateways.")
+
+st.sidebar.button("TRANSMITIR ALERTA TÁTICO", on_click=simular_recebimento_alerta, use_container_width=True)
 
 
 # --- Back-end de Roteamento ---
@@ -315,7 +271,6 @@ if rota_interpolada:
     tem_sinal_agora = any(haversine(lon_lider, lat_lider, gw["coords"][0], gw["coords"][1]) <= gw["radius"] for gw in GATEWAYS_LORAWAN)
 
 # --- Painel de Métricas (Top Metrics) ---
-st.markdown("<br>", unsafe_allow_html=True)
 m1, m2, m3, m4 = st.columns(4)
 
 with m1:
